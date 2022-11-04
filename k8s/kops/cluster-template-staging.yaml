@@ -1,0 +1,128 @@
+apiVersion: {{.kops_api_version.value}}
+kind: Cluster
+metadata:
+  name: {{.kubernetes_cluster_name.value}}
+spec:
+  api:
+    loadBalancer:
+      type: Public
+  authorization:
+    rbac: {}
+  additionalPolicies:
+    node: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "autoscaling:DescribeAutoScalingGroups",
+            "autoscaling:DescribeAutoScalingInstances",
+            "autoscaling:SetDesiredCapacity",
+            "autoscaling:DescribeLaunchConfigurations",
+            "autoscaling:DescribeTags",
+            "autoscaling:TerminateInstanceInAutoScalingGroup"
+          ],
+          "Resource": ["*"]
+        }
+      ]
+  channel: stable
+  cloudProvider: aws
+  # dnsZone: {{.kubernetes_cluster_name.value}}
+  configBase: s3://{{.kops_s3_bucket.value}}/{{.kubernetes_cluster_name.value}}
+  # Create one etcd member per AZ
+  etcdClusters:
+  - etcdMembers:
+  {{range $i, $az := .availability_zones.value}}
+    - instanceGroup: master-{{.}}
+      name: {{. | replace $.region.value "" }}
+  {{end}}
+    name: main
+  - etcdMembers:
+  {{range $i, $az := .availability_zones.value}}
+    - instanceGroup: master-{{.}}
+      name: {{. | replace $.region.value "" }}
+  {{end}}
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubernetesVersion: {{.kops_k8_version.value}}
+  kubelet:
+      anonymousAuth: false
+  kubernetesApiAccess:
+    - 0.0.0.0/0
+  sshAccess:
+    - 0.0.0.0/0
+  masterInternalName: api.internal.{{.kubernetes_cluster_name.value}}
+  masterPublicName: api.{{.kubernetes_cluster_name.value}}
+  networkCIDR: {{.vpc_cidr.value}}
+  networking:
+    weave:
+      mtu: 8912
+  nonMasqueradeCIDR: {{.kops_non_masq_cidr.value}}
+  subnets:
+  # Public (utility) subnets, one per AZ
+  {{range $i, $id := .public_subnet_cidr.value}}
+  - cidr: {{.}}
+    name: utility-{{index $.availability_zones.value $i}}
+    type: Utility
+    zone: {{index $.availability_zones.value $i}}
+  {{end}}
+  # Private subnets, one per AZ
+  {{range $i, $id := .private_subnet_cidr.value}}
+  - cidr: {{.}}
+    name: {{index $.availability_zones.value $i}}
+    type: Private
+    zone: {{index $.availability_zones.value $i}}
+  {{end}}
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+---
+
+# Create one master per AZ
+{{range .availability_zones.value}}
+apiVersion: {{$.kops_api_version.value}}
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: {{$.kubernetes_cluster_name.value}}
+  name: master-{{.}}
+spec:
+  image: {{$.kops_k8_image.value}}
+  kubernetesVersion: {{$.kops_k8_version.value}}
+  machineType: {{$.kops_k8_cluster_rs.value.master.machine_type}}
+  maxSize: {{$.kops_k8_cluster_rs.value.master.max_size}}
+  minSize: {{$.kops_k8_cluster_rs.value.master.min_size}}
+  rootVolumeSize: 64
+  rootVolumeType: gp2
+  role: Master
+  subnets:
+  - {{.}}
+---
+  {{end}}
+
+apiVersion: {{.kops_api_version.value}}
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: {{.kubernetes_cluster_name.value}}
+  name: nodes
+spec:
+  image: {{.kops_k8_image.value}}
+  cloudLabels:
+    k8s.io/cluster-autoscaler/enabled: ""
+    k8s.io/cluster-autoscaler/node-template/label: ""
+    kubernetes.io/cluster/{{.kubernetes_cluster_name.value}}: owned
+  kubernetesVersion: {{.kops_k8_version.value}}
+  machineType: {{.kops_k8_cluster_rs.value.node.machine_type}}
+  maxSize: {{.kops_k8_cluster_rs.value.node.max_size}}
+  minSize: {{.kops_k8_cluster_rs.value.node.min_size}}
+  rootVolumeSize: 64
+  rootVolumeType: gp2
+  role: Node
+  subnets:
+  {{range .availability_zones.value}}
+  - {{.}}
+  {{end}}

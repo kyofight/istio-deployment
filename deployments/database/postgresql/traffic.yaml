@@ -1,0 +1,39 @@
+---
+##################
+# postgresql
+##################
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: postgresql-gateway
+  namespace: database
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 5432
+      name: tcp-postgresql
+      protocol: TCP
+    hosts:
+    - "postgresql.${DOMAIN_NAME}"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: postgresql-vs
+  namespace: database
+spec:
+  hosts:
+  - "postgresql.${DOMAIN_NAME}"
+  gateways:
+  - postgresql-gateway
+  tcp:
+  - match:
+    - port: 5432
+    route:
+    - destination:
+        host: postgresql
+        port:
+          number: 5432

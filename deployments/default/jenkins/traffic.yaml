@@ -1,0 +1,37 @@
+---
+##################
+# jenkins
+##################
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: jenkins-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http2-jenkins
+      protocol: HTTP2
+    hosts:
+    - "jenkins.${env}.${DOMAIN_NAME}"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: jenkins-vs
+spec:
+  hosts:
+  - "jenkins.${env}.${DOMAIN_NAME}"
+  gateways:
+  - jenkins-gateway
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: jenkins
+        port:
+          number: 8080

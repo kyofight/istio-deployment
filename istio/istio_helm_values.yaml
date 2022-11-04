@@ -1,0 +1,175 @@
+# This is used to generate istio.yaml for minimal, demo mode.
+# Includes components used in the demo, defaults to alpha3 rules.
+global:
+  controlPlaneSecurityEnabled: false
+
+  proxy:
+    accessLogFile: "/dev/stdout"
+    resources:
+      requests:
+        cpu: 10m
+        memory: 40Mi
+
+  disablePolicyChecks: false
+
+  mtls:
+    # Default setting for service-to-service mtls. Can be set explicitly using
+    # destination rules or service annotations.
+    enabled: false
+  k8sIngress:
+    enabled: true
+    enableHttps: true
+    gatewayName: ingressgateway
+
+  # imagePullSecrets: [regcred]
+
+sidecarInjectorWebhook:
+  enabled: true
+  # If true, webhook or istioctl injector will rewrite PodSpec for liveness
+  # health check to redirect request to sidecar. This makes liveness check work
+  # even when mTLS is enabled.
+  rewriteAppHTTPProbe: false
+
+pilot:
+  autoscaleEnabled: false
+  traceSampling: 100.0
+  resources:
+    requests:
+      cpu: 10m
+      memory: 100Mi
+
+mixer:
+  policy:
+    enabled: true
+    autoscaleEnabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 100Mi
+
+  telemetry:
+    enabled: true
+    autoscaleEnabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+
+  adapters:
+    stdio:
+      enabled: true
+
+grafana:
+  enabled: true
+  security:
+    enabled: true
+    secretName: "grafana"
+
+tracing:
+  enabled: true
+
+kiali:
+  enabled: true
+  dashboard:
+    secretName: "kiali"
+    contextPath: /
+    grafanaURL: http://grafana.${DOMAIN_NAME}/
+    jaegerURL: http://jaeger.${DOMAIN_NAME}/
+
+certmanager:
+  enabled: true
+
+# servicegraph:
+#  enabled: true
+
+gateways:
+  istio-ingressgateway:
+    sds:
+      enabled: true
+    autoscaleEnabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 40Mi
+    ports:
+      - port: 15020
+        targetPort: 15020
+        name: status-port
+      - port: 80
+        targetPort: 80
+        name: http2
+        nodePort: 31380
+      - port: 443
+        name: https
+        nodePort: 31390
+      ### PORTS FOR UI/metrics #####
+      - port: 15029
+        targetPort: 15029
+        name: https-kiali
+      - port: 15030
+        targetPort: 15030
+        name: https-prometheus
+      - port: 15031
+        targetPort: 15031
+        name: https-grafana
+      - port: 15032
+        targetPort: 15032
+        name: https-tracing
+        # This is the port where sni routing happens
+      - port: 15443
+        targetPort: 15443
+        name: tls
+      # custom ports
+      - port: 8080
+        name: custom-1
+        targetPort: 8080
+      - port: 9080
+        name: custom-2
+        targetPort: 9080
+      - port: 9090
+        name: custom-3
+        targetPort: 9090
+      - port: 10101
+        name: custom-4
+        targetPort: 10101
+      # special ports
+      - port: 3306
+        name: mysql
+        targetPort: 3306
+      - port: 5432
+        name: postgresql
+        targetPort: 5432
+      - port: 5601
+        name: kibana-ui
+        targetPort: 5601
+      # rabbitmq start
+      - port: 5671
+        name: rabbitmq-tls
+        targetPort: 5671
+      - port: 5672
+        name: rabbitmq-tcp
+        targetPort: 5672
+      - port: 25672
+        name: rabbitmq-dist
+        targetPort: 25672
+      - port: 15672
+        name: rabbitmq-mgt
+        targetPort: 15672
+      # rabbitmq end
+      - port: 6379
+        name: redis
+        targetPort: 6379
+      - port: 9200
+        name: es-ui
+        targetPort: 9200
+      - port: 27017
+        name: mongodb
+        targetPort: 27017
+
+  istio-egressgateway:
+    enabled: true
+    autoscaleEnabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 40Mi

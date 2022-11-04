@@ -1,0 +1,39 @@
+---
+##################
+# Mongodb
+##################
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: mongodb-gateway
+  namespace: database
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 27017
+      name: tcp-mongodb
+      protocol: MONGO
+    hosts:
+    - "mongodb.${DOMAIN_NAME}"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mongodb-vs
+  namespace: database
+spec:
+  hosts:
+  - "mongodb.${DOMAIN_NAME}"
+  gateways:
+  - mongodb-gateway
+  tcp:
+  - match:
+    - port: 27017
+    route:
+    - destination:
+        host: mongodb
+        port:
+          number: 27017

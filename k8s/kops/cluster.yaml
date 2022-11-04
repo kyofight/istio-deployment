@@ -1,0 +1,97 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: "2019-12-18T08:51:23Z"
+  name: staging.server.net
+spec:
+  api:
+    loadBalancer:
+      type: Public
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://server.net.k8.staging/staging.server.net
+  etcdClusters:
+  - cpuRequest: 200m
+    etcdMembers:
+    - instanceGroup: master-us-west-2a
+      name: a
+    memoryRequest: 100Mi
+    name: main
+  - cpuRequest: 100m
+    etcdMembers:
+    - instanceGroup: master-us-west-2a
+      name: a
+    memoryRequest: 100Mi
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubelet:
+    anonymousAuth: false
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.15.6
+  masterPublicName: api.staging.server.net
+  networkCIDR: 172.20.0.0/16
+  networking:
+    weave:
+      mtu: 8912
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - 0.0.0.0/0
+  subnets:
+  - cidr: 172.20.32.0/19
+    name: us-west-2a
+    type: Private
+    zone: us-west-2a
+  - cidr: 172.20.0.0/22
+    name: utility-us-west-2a
+    type: Utility
+    zone: us-west-2a
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2019-12-18T08:51:23Z"
+  labels:
+    kops.k8s.io/cluster: staging.server.net
+  name: master-us-west-2a
+spec:
+  image: kope.io/k8s-1.15-debian-stretch-amd64-hvm-ebs-2019-09-26
+  machineType: t2.large
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-us-west-2a
+  role: Master
+  subnets:
+  - us-west-2a
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2019-12-18T08:51:23Z"
+  labels:
+    kops.k8s.io/cluster: staging.server.net
+  name: nodes
+spec:
+  image: kope.io/k8s-1.15-debian-stretch-amd64-hvm-ebs-2019-09-26
+  machineType: t2.medium
+  maxSize: 3
+  minSize: 3
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  subnets:
+  - us-west-2a

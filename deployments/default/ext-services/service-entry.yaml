@@ -1,0 +1,68 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: kyod
+spec:
+  hosts:
+  - kyod.server.net
+#  exportTo:
+#  - "."
+  location: MESH_EXTERNAL
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: DNS
+
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: isuncc
+spec:
+  hosts:
+  - cc.isun.one
+#  exportTo:
+#  - "."
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: TLS
+  resolution: DNS
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: slack
+spec:
+  hosts:
+  - hooks.slack.com
+#  exportTo:
+#  - "."
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: TLS
+  resolution: DNS
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: tidebit
+spec:
+  hosts:
+  - test.tidebit.com
+#  exportTo:
+#  - "."
+  location: MESH_EXTERNAL
+  ports:
+  - number: 443
+    name: https
+    protocol: TLS
+  resolution: DNS

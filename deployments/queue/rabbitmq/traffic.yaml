@@ -1,0 +1,39 @@
+---
+##################
+# Rabbitmq
+##################
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: rabbitmq-gateway
+  namespace: queue
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http2-rabbitmq
+      protocol: HTTP2
+    hosts:
+    - "rabbitmq.${DOMAIN_NAME}"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: rabbitmq-vs
+  namespace: queue
+spec:
+  hosts:
+  - "rabbitmq.${DOMAIN_NAME}"
+  gateways:
+  - rabbitmq-gateway
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: rabbitmq
+        port:
+          number: 15672
